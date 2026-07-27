@@ -2,6 +2,11 @@
 
 ![alt text](https://github.com/tushar-chauhan/omarchy-wireguard/blob/main/assets/plugin.png "Omarchy WireGuard Plugin")
 
+**Installation:**
+```sh
+omarchy plugin add https://github.com/tushar-chauhan/omarchy-wireguard.git
+```
+
 This plugin discrovers all the `.conf` files present in following folders:
 - `~/.config/wireguard`
 - `~/wireguard`
