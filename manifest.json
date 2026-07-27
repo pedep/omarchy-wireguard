@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "custom.wireguard",
+  "name": "WireGuard VPN",
+  "description": "WireGuard VPN manager for Omarchy Shell",
+  "version": "1.0.0",
+  "kinds": ["bar-widget"],
+  "activation": "always",
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "WireGuard VPN",
+    "description": "Manage WireGuard VPN connections",
+    "category": "Network",
+    "allowMultiple": false
+  }
+}

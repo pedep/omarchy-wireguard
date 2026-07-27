@@ -1,0 +1,15 @@
+# OS Generated Files
+.DS_Store
+Thumbs.db
+
+# IDEs and Text Editors
+.vscode/
+.idea/
+
+# Environment and Secrets
+.env
+.env.local
+*.pem
+
+# qs symlink
+qs
