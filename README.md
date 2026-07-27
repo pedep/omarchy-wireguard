@@ -3,7 +3,7 @@
 ![alt text](https://github.com/tushar-chauhan/omarchy-wireguard/blob/main/assets/plugin.png "Omarchy WireGuard Plugin")
 
 This plugin discrovers all the `.conf` files present in following folders:
-- `~/config/wireguard`
+- `~/.config/wireguard`
 - `~/wireguard`
 
 It won't search in any other directories for wireguard configuration files.
