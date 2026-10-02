@@ -3,7 +3,7 @@
   "id": "custom.wireguard",
   "name": "WireGuard VPN",
   "description": "WireGuard VPN manager for Omarchy Shell",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "kinds": ["bar-widget"],
   "activation": "always",
   "entryPoints": {

@@ -14,7 +14,8 @@ Panel {
   property var wireguardConnections: []
   property bool isBusy: toggleProcess.running
   property bool isImporting: importProcess.running
-  property string activeConnection: ""
+  property var activeConnections: []
+  readonly property bool anyActive: activeConnections.length > 0
 
   // Omarchy Keyboard & Cursor State Variables
   property int selectedIndex: -1
@@ -82,7 +83,7 @@ Panel {
     var script = "";
 
     if (turnOn) {
-      script = "nmcli -t -f NAME,TYPE connection show --active | grep ':wireguard$' | cut -d: -f1 | while read -r c; do if [ \"$c\" != '" + connName + "' ]; then nmcli connection down id \"$c\"; fi; done; nmcli connection up id '" + connName + "'";
+      script = "nmcli connection up id '" + connName + "'";
     } else {
       script = "nmcli connection down id '" + connName + "'";
     }
@@ -136,17 +137,17 @@ Panel {
       onStreamFinished: function () {
         var activeArr = String(text || "").trim().split("\n");
         var conns = root.wireguardConnections.slice();
-        var anyActive = "";
+        var activeNames = [];
 
         for (var i = 0; i < conns.length; i++) {
           var isActive = (activeArr.indexOf(conns[i].name) !== -1);
           conns[i].active = isActive;
           if (isActive)
-            anyActive = conns[i].name;
+            activeNames.push(conns[i].name);
         }
 
         root.wireguardConnections = conns;
-        root.activeConnection = anyActive;
+        root.activeConnections = activeNames;
       }
     }
   }
@@ -182,7 +183,7 @@ Panel {
     anchors.fill: parent
     bar: root.bar
     text: "󰖂"
-    foreground: root.activeConnection !== "" ? root.bar.foreground : Qt.darker(root.bar.foreground, 1.2)
+    foreground: root.anyActive ? root.bar.foreground : Qt.darker(root.bar.foreground, 1.2)
 
     onPressed: function (b) {
       if (root.opened) {
@@ -273,7 +274,7 @@ Panel {
             anchors.margins: -root.heroRingPad
             color: "transparent"
             radius: Style.cornerRadius
-            visible: root.headerHasCursor && root.activeConnection !== ""
+            visible: root.headerHasCursor && root.anyActive
             borderSpec: Border.controlSpec("hover-cursor", root.bar.foreground, Color.accent)
           }
 
@@ -283,7 +284,7 @@ Panel {
             color: root.bar.foreground
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.display
-            opacity: root.activeConnection !== "" ? 1.0 : 0.5
+            opacity: root.anyActive ? 1.0 : 0.5
             anchors.left: parent.left
             anchors.leftMargin: root.heroRingPad
             anchors.verticalCenter: parent.verticalCenter
@@ -292,7 +293,7 @@ Panel {
               id: heroIconMouse
               anchors.fill: parent
               hoverEnabled: true
-              cursorShape: root.activeConnection !== "" ? Qt.PointingHandCursor : Qt.ArrowCursor
+              cursorShape: root.anyActive ? Qt.PointingHandCursor : Qt.ArrowCursor
               onContainsMouseChanged: if (containsMouse) {
                 root.cursorActive = true;
                 root.focusSection = "header";
@@ -301,7 +302,7 @@ Panel {
               onClicked: root.disableAll()
             }
             PanelToolTip {
-              visible: heroIconMouse.containsMouse && root.activeConnection !== ""
+              visible: heroIconMouse.containsMouse && root.anyActive
               text: "Disable VPN"
               fontFamily: root.bar.fontFamily
             }
@@ -316,7 +317,7 @@ Panel {
             spacing: Style.space(2)
 
             Text {
-              text: root.activeConnection !== "" ? root.activeConnection : "WireGuard"
+              text: root.anyActive ? root.activeConnections.join(" + ") : "WireGuard"
               color: root.bar.foreground
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.title
@@ -326,7 +327,7 @@ Panel {
             }
 
             Text {
-              text: root.activeConnection !== "" ? "ROUTING SECURELY" : "NOT CONNECTED"
+              text: root.anyActive ? (root.activeConnections.length + (root.activeConnections.length === 1 ? " CONNECTION ACTIVE" : " CONNECTIONS ACTIVE")) : "NOT CONNECTED"
               color: Qt.darker(root.bar.foreground, 1.4)
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.caption
