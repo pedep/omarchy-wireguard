@@ -317,7 +317,7 @@ Panel {
             spacing: Style.space(2)
 
             Text {
-              text: root.anyActive ? root.activeConnections.join(" + ") : "WireGuard"
+              text: root.anyActive ? (root.activeConnections.length > 1 ? root.activeConnections[0] + " +" + (root.activeConnections.length - 1) : root.activeConnections[0]) : "WireGuard"
               color: root.bar.foreground
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.title
