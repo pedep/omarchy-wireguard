@@ -106,18 +106,40 @@ Panel {
   // 1. Fetch available WireGuard connections from NetworkManager
   Process {
     id: listConfigs
-    command: ["bash", "-c", "nmcli -t -f NAME,TYPE connection show | grep ':wireguard$' | cut -d: -f1 || true"]
+    // Fetch names and per-connection peer AllowedIPs; classify FULL vs LAN.
+    // Risky: full-tunnel (default route) AllowedIPs but route-table set to "main"
+    // (bypasses NM policy routing and blackholes concurrent tunnels).
+    command: ["bash", "-c", `
+      nmcli -t -f NAME,TYPE connection show | grep ':wireguard$' | cut -d: -f1 | while read -r c; do
+        peers=$(nmcli -g wireguard.peers connection show "$c" 2>/dev/null)
+        tag="LAN"
+        risky="no"
+        if echo "$peers" | grep -qE '(^|[ ;,])allowed-ips=[^ ]*(0\.0\.0\.0/0|::/0)'; then
+          tag="FULL"
+          # risky if any peer pins route-table to main (bypasses policy routing)
+          if echo "$peers" | grep -qE '(^|[ ;,])route-table=main'; then
+            risky="yes"
+          fi
+        fi
+        echo "$c|$tag|$risky"
+      done || true`]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: function () {
         var lines = String(text || "").trim().split("\n");
         var newConns = [];
         for (var i = 0; i < lines.length; i++) {
-          var name = lines[i].trim();
+          var line = lines[i].trim();
+          if (line.length === 0)
+            continue;
+          var parts = line.split("|");
+          var name = parts[0];
           if (name.length > 0) {
             newConns.push({
               name: name,
-              active: false
+              active: false,
+              tag: parts.length > 1 ? parts[1] : "LAN",
+              risky: parts.length > 2 ? parts[2] === "yes" : false
             });
           }
         }
@@ -498,13 +520,37 @@ Panel {
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
 
-        Text {
-          text: row.conn.name
-          color: root.bar.foreground
-          font.family: root.bar.fontFamily
-          font.pixelSize: Style.font.body
-          elide: Text.ElideRight
+        Row {
+          spacing: Style.space(6)
           width: parent.width
+
+          Text {
+            text: row.conn.name
+            color: root.bar.foreground
+            font.family: root.bar.fontFamily
+            font.pixelSize: Style.font.body
+            elide: Text.ElideRight
+            width: parent.width - tagBadge.width - parent.spacing
+          }
+
+          Rectangle {
+            id: tagBadge
+            anchors.verticalCenter: parent.verticalCenter
+            radius: height / 2
+            implicitWidth: tagText.implicitWidth + Style.space(8)
+            implicitHeight: tagText.implicitHeight + 2
+            color: row.conn.tag === "FULL" && row.conn.risky ? Color.urgent : Qt.darker(root.bar.foreground, 3.0)
+
+            Text {
+              id: tagText
+              anchors.centerIn: parent
+              text: row.conn.tag === "FULL" ? (row.conn.risky ? "FULL ⚠" : "FULL") : "LAN"
+              color: root.bar.foreground
+              font.family: root.bar.fontFamily
+              font.pixelSize: Style.font.caption
+              font.bold: true
+            }
+          }
         }
 
         Text {
